@@ -6,7 +6,7 @@ import React, { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Activity, Percent } from 'lucide-react';
+import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Activity, Percent, CalendarDays } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -69,7 +69,7 @@ export default function FiscalNavigatorForm() {
     defaultValues: {
       annualRevenue: '' as unknown as number,
       annualExpenses: '' as unknown as number,
-      activityType: "LIBERAL_BNC_AUTRE" as ActivityType, 
+      activityType: "LIBERAL_BNC_AUTRE" as ActivityType,
     },
   });
 
@@ -77,7 +77,7 @@ export default function FiscalNavigatorForm() {
     setSimulationResult(null);
     startTransition(async () => {
       const result = await getTaxSimulation(values);
-       if (result.error && (!result.micro || !result.reel || !result.micro.taxableIncome || !result.reel.taxableIncome )) { 
+       if (result.error && (!result.micro || !result.reel || !result.micro.taxableIncome || !result.reel.taxableIncome )) {
         toast({
           variant: "destructive",
           title: "Erreur de simulation",
@@ -92,7 +92,7 @@ export default function FiscalNavigatorForm() {
     if (value === undefined || isNaN(value)) return 'N/A';
     return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
   };
-  
+
   const formatPercentage = (value: number | undefined) => {
     if (value === undefined || isNaN(value)) return 'N/A';
     return (value * 100).toFixed(1) + '%';
@@ -165,7 +165,7 @@ export default function FiscalNavigatorForm() {
               name="annualExpenses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Charges annuelles déductibles (€) (pour Régime Réel)</FormLabel>
+                  <FormLabel className="text-base">Charges annuelles réelles (€)</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Receipt className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -247,8 +247,9 @@ export default function FiscalNavigatorForm() {
                 <p>CFP ({formatPercentage(simulationResult.micro.cfpRate)}): <span className="font-semibold">{formatCurrency(simulationResult.micro.cfpContribution)}</span></p>
                 <p>Total cotisations URSSAF: <strong className="text-accent-foreground">{formatCurrency(simulationResult.micro.totalUrssafContributions)}</strong></p>
                 <Separator className="my-2" />
-                <p className="text-base font-semibold">Revenu net perçu (après impôt et cotisations):</p>
+                <p className="text-base font-semibold">Revenu net perçu (après impôt, cotisations et charges réelles):</p>
                 <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.micro.netIncomeAfterAll)}</p>
+                <p className="text-sm text-muted-foreground italic flex items-center gap-1"><CalendarDays size={14}/>Soit env. {formatCurrency(simulationResult.micro.netIncomeAfterAll / 12)} / mois</p>
               </CardContent>
             </Card>
 
@@ -261,20 +262,21 @@ export default function FiscalNavigatorForm() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p>Chiffre d'affaires: <span className="font-semibold">{formatCurrency(form.getValues('annualRevenue'))}</span></p>
+                <p>Charges annuelles réelles: <span className="font-semibold">{formatCurrency(form.getValues('annualExpenses'))}</span></p>
                  <Separator className="my-1" />
                 <p className="font-medium text-primary-focus">Impôt sur le revenu :</p>
-                <p>Charges déductibles: <span className="font-semibold">{formatCurrency(form.getValues('annualExpenses'))}</span></p>
-                <p>Bénéfice imposable (base IR & cotisations): <span className="font-semibold">{formatCurrency(simulationResult.reel.taxableIncome)}</span></p>
+                <p>Bénéfice imposable (base IR, après cotisations sociales estimées): <span className="font-semibold">{formatCurrency(simulationResult.reel.taxableIncome)}</span></p>
                 <p>Montant de l'impôt: <strong className="text-accent-foreground">{formatCurrency(simulationResult.reel.taxAmount)}</strong></p>
                 <Separator className="my-2" />
                 <p className="font-medium text-primary-focus flex items-center gap-1"><Briefcase size={16}/> Cotisations Sociales (estimation) :</p>
-                <p>Taux estimé sur bénéfice: <span className="font-semibold">{formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)}</span></p>
+                <p>Taux estimé sur bénéfice (après déduction des cotisations): <span className="font-semibold">{formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)}</span></p>
                 <p>Montant estimé des cotisations: <strong className="text-accent-foreground">{formatCurrency(simulationResult.reel.estimatedSocialContributions)}</strong></p>
                 <Separator className="my-2" />
                 <p className="text-base font-semibold">Revenu net perçu (après impôt et estimation cotisations):</p>
                 <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.reel.netIncomeAfterAllContributions)}</p>
+                <p className="text-sm text-muted-foreground italic flex items-center gap-1"><CalendarDays size={14}/>Soit env. {formatCurrency(simulationResult.reel.netIncomeAfterAllContributions / 12)} / mois</p>
                  <p className="text-xs text-muted-foreground italic mt-2">
-                  Les cotisations sociales au régime réel sont complexes et peuvent varier considérablement (ACRE, type d'activité, caisse de retraite, etc.). Le montant ci-dessus est une estimation grossière (environ {formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)} du bénéfice) et ne remplace pas une simulation personnalisée.
+                  Les cotisations sociales au régime réel sont complexes et peuvent varier considérablement (ACRE, type d'activité, caisse de retraite, etc.). Le montant ci-dessus est une estimation grossière (environ {formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)} du bénéfice après déduction de ces mêmes cotisations) et ne remplace pas une simulation personnalisée.
                 </p>
               </CardContent>
             </Card>

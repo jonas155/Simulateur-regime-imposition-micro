@@ -1,3 +1,4 @@
+// src/app/actions.ts
 'use server';
 
 import { z } from 'zod';
@@ -27,8 +28,7 @@ export async function getTaxSimulation(
   const validation = SimulationInputSchema.safeParse(data);
   if (!validation.success) {
     return {
-      // Provide default/zeroed results for micro and reel to avoid undefined errors in UI
-      micro: { taxableIncome: 0, taxAmount: 0, allowanceApplied: 0 },
+      micro: { taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, urssafSocialContributions: 0, cfpContribution: 0 },
       reel: { taxableIncome: 0, taxAmount: 0 },
       aiRecommendation: null,
       error: validation.error.errors.map(e => e.message).join(', ')
@@ -49,7 +49,6 @@ export async function getTaxSimulation(
     } catch (aiError) {
       console.error("AI recommendation error:", aiError);
       aiRecommendationText = "La recommandation IA n'a pas pu être générée.";
-      // Continue without AI recommendation if it fails
     }
     
     return {
@@ -60,7 +59,7 @@ export async function getTaxSimulation(
   } catch (e) {
     console.error("Tax calculation error:", e);
     return {
-      micro: { taxableIncome: 0, taxAmount: 0, allowanceApplied: 0 },
+      micro: { taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, urssafSocialContributions: 0, cfpContribution: 0 },
       reel: { taxableIncome: 0, taxAmount: 0 },
       aiRecommendation: null,
       error: "Une erreur est survenue lors du calcul des impôts."

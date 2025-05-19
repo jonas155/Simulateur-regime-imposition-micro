@@ -6,7 +6,7 @@ import React, { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Building, Activity } from 'lucide-react';
+import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Activity } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +40,7 @@ import { getTaxSimulation, type SimulationResult } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { ActivityType } from '@/lib/tax-calculator';
 
-const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC"], {
+const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_AUTRE", "LIBERAL_BNC_CIPAV"], {
   errorMap: () => ({ message: "Veuillez sélectionner un type d'activité." })
 });
 
@@ -54,8 +54,9 @@ type FormData = z.infer<typeof formSchema>;
 
 const activityTypeLabels: Record<ActivityType, string> = {
   VENTE_BIC: "Ventes de marchandises (BIC)",
-  SERVICE_BIC: "Prestations de services (BIC)",
-  LIBERAL_BNC: "Activités libérales (BNC)",
+  SERVICE_BIC: "Prestations de services commerciales/artisanales (BIC)",
+  LIBERAL_BNC_AUTRE: "Autres prestations de services (BNC, non-CIPAV)",
+  LIBERAL_BNC_CIPAV: "Professions libérales réglementées (BNC, CIPAV)",
 };
 
 export default function FiscalNavigatorForm() {
@@ -68,7 +69,7 @@ export default function FiscalNavigatorForm() {
     defaultValues: {
       annualRevenue: '' as unknown as number,
       annualExpenses: '' as unknown as number,
-      activityType: "LIBERAL_BNC" as ActivityType, // Default activity type
+      activityType: "LIBERAL_BNC_AUTRE" as ActivityType, 
     },
   });
 
@@ -88,12 +89,12 @@ export default function FiscalNavigatorForm() {
   };
 
   const formatCurrency = (value: number | undefined) => {
-    if (value === undefined) return 'N/A';
+    if (value === undefined || isNaN(value)) return 'N/A';
     return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
   };
   
   const formatPercentage = (value: number | undefined) => {
-    if (value === undefined) return 'N/A';
+    if (value === undefined || isNaN(value)) return 'N/A';
     return (value * 100).toFixed(1) + '%';
   }
 
@@ -126,9 +127,9 @@ export default function FiscalNavigatorForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(activityTypeLabels).map(([value, label]) => (
+                      {(Object.keys(activityTypeLabels) as ActivityType[]).map((value) => (
                         <SelectItem key={value} value={value} className="text-base">
-                          {label}
+                          {activityTypeLabels[value]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -150,6 +151,7 @@ export default function FiscalNavigatorForm() {
                         type="number"
                         placeholder="Ex: 50000"
                         {...field}
+                        onChange={event => field.onChange(event.target.value === '' ? '' : +event.target.value)}
                         className="pl-10 text-base"
                         step="any"
                       />
@@ -172,6 +174,7 @@ export default function FiscalNavigatorForm() {
                         type="number"
                         placeholder="Ex: 10000"
                         {...field}
+                        onChange={event => field.onChange(event.target.value === '' ? '' : +event.target.value)}
                         className="pl-10 text-base"
                         step="any"
                       />
@@ -190,7 +193,6 @@ export default function FiscalNavigatorForm() {
 
       {isPending && (
         <CardFooter className="flex flex-col gap-4 pt-6">
-          {/* Skeleton remains the same */}
           <Skeleton className="h-8 w-1/2" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
             <div className="space-y-2">

@@ -1,6 +1,6 @@
 // src/lib/tax-calculator.ts
 
-export type ActivityType = "VENTE_BIC" | "SERVICE_BIC" | "LIBERAL_BNC";
+export type ActivityType = "VENTE_BIC" | "SERVICE_BIC" | "LIBERAL_BNC_AUTRE" | "LIBERAL_BNC_CIPAV";
 
 /**
  * Calculates French income tax based on progressive tax brackets for 1 part (single person).
@@ -59,13 +59,16 @@ interface MicroRates {
 
 function getMicroRates(activityType: ActivityType): MicroRates {
   switch (activityType) {
-    case "VENTE_BIC":
-      return { allowanceRate: 0.71, urssafSocialRate: 0.123, cfpRate: 0.001, minAllowance: 305 }; // CFP commerçant 0.1%
-    case "SERVICE_BIC":
-      return { allowanceRate: 0.50, urssafSocialRate: 0.212, cfpRate: 0.001, minAllowance: 305 }; // CFP prestations de services commerciales 0.1% (assimilé commerçant)
-    case "LIBERAL_BNC":
-    default:
-      return { allowanceRate: 0.34, urssafSocialRate: 0.212, cfpRate: 0.002, minAllowance: 305 }; // CFP professions libérales 0.2%
+    case "VENTE_BIC": // Ventes de marchandises, denrées à emporter/sur place, fourniture logement
+      return { allowanceRate: 0.71, urssafSocialRate: 0.123, cfpRate: 0.001, minAllowance: 305 };
+    case "SERVICE_BIC": // Prestations de services commerciales et artisanales (BIC)
+      return { allowanceRate: 0.50, urssafSocialRate: 0.212, cfpRate: 0.001, minAllowance: 305 }; // CFP pour services commerciaux, artisans c'est 0.3%
+    case "LIBERAL_BNC_AUTRE": // Autres prestations de services (BNC), non CIPAV
+      return { allowanceRate: 0.34, urssafSocialRate: 0.231, cfpRate: 0.002, minAllowance: 305 };
+    case "LIBERAL_BNC_CIPAV": // Professions libérales réglementées relevant de la Cipav
+      return { allowanceRate: 0.34, urssafSocialRate: 0.232, cfpRate: 0.002, minAllowance: 305 };
+    default: // Fallback, should ideally not be reached if form validation is correct
+      return { allowanceRate: 0.34, urssafSocialRate: 0.231, cfpRate: 0.002, minAllowance: 305 };
   }
 }
 
@@ -73,7 +76,7 @@ function getMicroRates(activityType: ActivityType): MicroRates {
  * Calculates tax details for Régime Micro-Entreprise.
  * Takes into account activity type for allowances and URSSAF rates.
  * @param annualRevenue The annual revenue.
- * @param activityType The type of activity (BIC Vente, BIC Service, BNC).
+ * @param activityType The type of activity.
  * @returns An object containing detailed tax and contribution calculations.
  */
 export function calculateMicroRegimeTax(annualRevenue: number, activityType: ActivityType): MicroRegimeResult {

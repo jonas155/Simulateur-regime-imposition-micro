@@ -11,7 +11,7 @@ import {
   type ActivityType
 } from '@/lib/tax-calculator';
 
-const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC"], {
+const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_AUTRE", "LIBERAL_BNC_CIPAV"], {
   errorMap: () => ({ message: "Veuillez sélectionner un type d'activité valide." })
 });
 
@@ -22,8 +22,8 @@ const SimulationInputSchema = z.object({
 });
 
 export interface SimulationResult {
-  micro: MicroRegimeResult | null; // Can be null if inputs are invalid initially
-  reel: ReelRegimeResult | null;   // Can be null if inputs are invalid initially
+  micro: MicroRegimeResult | null; 
+  reel: ReelRegimeResult | null;   
   aiRecommendation: string | null;
   error?: string;
   activityType?: ActivityType;
@@ -34,19 +34,19 @@ export async function getTaxSimulation(
 ): Promise<SimulationResult> {
   const validation = SimulationInputSchema.safeParse(data);
   if (!validation.success) {
-    // Construct a default MicroRegimeResult with all zero values and rates for LIBERAL_BNC
+    // Construct a default MicroRegimeResult with typical rates for LIBERAL_BNC_AUTRE
     const defaultMicroResult: MicroRegimeResult = {
         taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, 
-        allowanceRate: 0.34, urssafSocialContributionsRate: 0.212, cfpRate: 0.002,
+        allowanceRate: 0.34, urssafSocialContributionsRate: 0.231, cfpRate: 0.002,
         urssafSocialContributions: 0, cfpContribution: 0, totalUrssafContributions: 0,
         netIncomeAfterAll: 0
     };
     return {
-      micro: defaultMicroResult, // Provide default structure
-      reel: { taxableIncome: 0, taxAmount: 0, netIncomeAfterTax: 0 }, // Provide default structure
+      micro: defaultMicroResult, 
+      reel: { taxableIncome: 0, taxAmount: 0, netIncomeAfterTax: 0 }, 
       aiRecommendation: null,
       error: validation.error.errors.map(e => e.message).join(', '),
-      activityType: data.activityType || "LIBERAL_BNC", // Pass through activity type or default
+      activityType: data.activityType || "LIBERAL_BNC_AUTRE", 
     };
   }
 
@@ -76,7 +76,7 @@ export async function getTaxSimulation(
     console.error("Tax calculation error:", e);
     const defaultMicroResult: MicroRegimeResult = {
         taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, 
-        allowanceRate: 0.34, urssafSocialContributionsRate: 0.212, cfpRate: 0.002,
+        allowanceRate: 0.34, urssafSocialContributionsRate: 0.231, cfpRate: 0.002,
         urssafSocialContributions: 0, cfpContribution: 0, totalUrssafContributions: 0,
         netIncomeAfterAll: 0
     };

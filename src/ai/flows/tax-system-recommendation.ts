@@ -14,7 +14,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { ActivityType } from '@/lib/tax-calculator'; // Import ActivityType
 
-const ActivityTypeEnumSchema = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC"]);
+const ActivityTypeEnumSchema = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_AUTRE", "LIBERAL_BNC_CIPAV"]);
 
 const TaxRecommendationInputSchema = z.object({
   annualRevenue: z
@@ -24,7 +24,7 @@ const TaxRecommendationInputSchema = z.object({
     .number()
     .describe('The annual expenses of the business.'),
   activityType: ActivityTypeEnumSchema.describe(
-    "Le type d'activité : 'VENTE_BIC' (Ventes de marchandises), 'SERVICE_BIC' (Prestations de services BIC), ou 'LIBERAL_BNC' (Activités libérales BNC)."
+    "Le type d'activité : 'VENTE_BIC' (Ventes de marchandises), 'SERVICE_BIC' (Prestations de services BIC), 'LIBERAL_BNC_AUTRE' (Autres prestations de services BNC), ou 'LIBERAL_BNC_CIPAV' (Professions libérales réglementées CIPAV)."
   ),
 });
 export type TaxRecommendationInput = z.infer<typeof TaxRecommendationInputSchema>;
@@ -52,14 +52,18 @@ Chiffre d'affaires annuel : {{{annualRevenue}}}
 Charges annuelles : {{{annualExpenses}}}
 Type d'activité : {{{activityType}}}
 
-Rappel des abattements forfaitaires pour le régime Micro (avantages fiscaux) :
-- Vente de marchandises (VENTE_BIC) : 71%
-- Prestations de services (SERVICE_BIC) : 50%
-- Activités libérales (LIBERAL_BNC) : 34%
+Rappel des abattements forfaitaires pour l'impôt sur le revenu en régime Micro (avantages fiscaux) :
+- Ventes de marchandises (VENTE_BIC) : 71%
+- Prestations de services commerciales et artisanales (SERVICE_BIC) : 50%
+- Autres prestations de services (LIBERAL_BNC_AUTRE) et Professions libérales réglementées CIPAV (LIBERAL_BNC_CIPAV) : 34%
 
-Les taux de cotisations sociales varient aussi selon le type d'activité en régime Micro.
+Taux globaux de cotisations sociales et CFP (Contribution à la Formation Professionnelle) sur le CA en régime Micro :
+- Ventes de marchandises (VENTE_BIC) : Cotisations sociales 12,3% + CFP 0,1% = 12,4%
+- Prestations de services commerciales et artisanales (SERVICE_BIC) : Cotisations sociales 21,2% + CFP 0,1% (pour services commerciaux) = 21,3%
+- Autres prestations de services (LIBERAL_BNC_AUTRE) : Cotisations sociales 23,1% (taux actuel, évoluera à 24,6% en 2025 et 26,1% en 2026) + CFP 0,2% = 23,3%
+- Professions libérales réglementées relevant de la Cipav (LIBERAL_BNC_CIPAV) : Cotisations sociales 23,2% + CFP 0,2% = 23,4%
 
-Considérez que le Régime Micro est plus simple mais comporte un abattement forfaitaire pour les charges (dépendant du type d'activité), tandis que le Régime Réel permet de déduire les charges réelles mais nécessite une comptabilité plus détaillée. Concentrez votre recommandation sur le régime qui entraînera une baisse de l'impôt sur le revenu et des charges globales, en fonction des charges réduisant le revenu imposable. La réponse doit être uniquement en français.
+Considérez que le Régime Micro est plus simple mais comporte un abattement forfaitaire pour les charges (dépendant du type d'activité) et des taux de cotisations sociales fixes sur le CA. Le Régime Réel permet de déduire les charges réelles mais nécessite une comptabilité plus détaillée, et les cotisations sociales sont calculées sur le bénéfice réel (plus complexes, non simulées ici en détail mais généralement plus élevées si le bénéfice est important). Concentrez votre recommandation sur le régime qui entraînera une baisse de l'impôt sur le revenu ET des charges sociales globales, en fonction des charges déductibles qui réduisent le revenu imposable. La réponse doit être uniquement en français.
 `,
 });
 

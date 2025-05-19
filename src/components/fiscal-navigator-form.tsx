@@ -106,7 +106,7 @@ export default function FiscalNavigatorForm() {
         <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
           <FileText size={32} />
         </div>
-        <CardTitle className="text-3xl font-bold">Fiscal Navigator</CardTitle>
+        <CardTitle className="text-3xl font-bold">Simulateur Régime Micro / Réel</CardTitle>
         <CardDescription className="text-lg">
           Simulez votre imposition et vos cotisations selon votre type d'activité.
         </CardDescription>
@@ -303,3 +303,4 @@ export default function FiscalNavigatorForm() {
     </Card>
   );
 }
+

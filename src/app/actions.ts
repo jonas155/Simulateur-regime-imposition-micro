@@ -33,8 +33,7 @@ export interface SimulationResult {
 const defaultReelResult: ReelRegimeResult = { 
   taxableIncome: 0, 
   taxAmount: 0, 
-  netIncomeAfterTax: 0,
-  estimatedSocialContributionsRate: 0.43,
+  estimatedSocialContributionsRate: 0.45, // Default rate factor
   estimatedSocialContributions: 0,
   netIncomeAfterAllContributions: 0
 };

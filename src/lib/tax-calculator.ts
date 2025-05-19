@@ -113,47 +113,52 @@ export function calculateMicroRegimeTax(annualRevenue: number, activityType: Act
 }
 
 export interface ReelRegimeResult {
-  taxableIncome: number; // This is revenue - expenses, also known as bénéfice
-  taxAmount: number;
-  netIncomeAfterTax: number; // This is revenue - expenses - tax (bénéfice - tax)
-  estimatedSocialContributionsRate: number;
-  estimatedSocialContributions: number;
-  netIncomeAfterAllContributions: number; // This is bénéfice - tax - estimated social contributions
+  taxableIncome: number; // Profit AFTER social contributions, base for IR
+  taxAmount: number;     // IR on taxableIncome
+  estimatedSocialContributionsRate: number; // e.g. 0.45 (rate on profit after SC)
+  estimatedSocialContributions: number;     // Calculated SC
+  netIncomeAfterAllContributions: number; // Final net: taxableIncome - taxAmount
 }
 
 /**
  * Calculates tax details for Régime Réel.
- * Taxable income is annual revenue minus annual expenses.
- * Includes an estimation for social contributions.
+ * Taxable income is annual revenue minus annual expenses, AFTER deduction of estimated social contributions.
+ * Social contributions are estimated based on profit after these same contributions are deducted.
  * @param annualRevenue The annual revenue.
  * @param annualExpenses The annual expenses.
- * @returns An object containing taxable income, tax amount, net income after tax, and estimated social contributions.
+ * @returns An object containing taxable income, tax amount, and estimated social contributions.
  */
 export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: number): ReelRegimeResult {
   const revenue = Math.max(0, annualRevenue);
   const expenses = Math.max(0, annualExpenses);
-  const estimatedSocialRate = 0.45; // Estimated 45% of benefit, as per user examples
+  const socialContributionRateFactor = 0.45; // The 45% rate applied to (Profit - SC)
 
-  let benefice = revenue - expenses; // This is the base for IR and social contributions
-  if (benefice < 0) {
-    benefice = 0;
+  let profitBeforeSC = revenue - expenses;
+  if (profitBeforeSC < 0) {
+    profitBeforeSC = 0;
+  }
+
+  // Social contributions (SC) are 'socialContributionRateFactor' of (profitBeforeSC - SC)
+  // So, SC = profitBeforeSC * socialContributionRateFactor / (1 + socialContributionRateFactor)
+  const estimatedSocialContributions = (profitBeforeSC > 0) 
+    ? (profitBeforeSC / (1 + socialContributionRateFactor)) * socialContributionRateFactor 
+    : 0;
+
+  // Taxable income for IR is profit after social contributions are deducted
+  let taxableIncomeForIR = profitBeforeSC - estimatedSocialContributions;
+  if (taxableIncomeForIR < 0) { 
+    taxableIncomeForIR = 0;
   }
   
-  const taxableIncomeForIR = benefice; // In Régime Réel, IR is on the bénéfice
   const taxAmount = calculateIncomeTax(taxableIncomeForIR);
   
-  const estimatedSocialContributions = benefice * estimatedSocialRate;
-  
-  const netIncomeAfterTax = benefice - taxAmount; // Net after IR, before social contributions
-  const netIncomeAfterAllContributions = benefice - taxAmount - estimatedSocialContributions;
+  const netIncomeAfterAll = taxableIncomeForIR - taxAmount;
 
   return {
     taxableIncome: parseFloat(taxableIncomeForIR.toFixed(2)),
     taxAmount,
-    netIncomeAfterTax: parseFloat(netIncomeAfterTax.toFixed(2)),
-    estimatedSocialContributionsRate: estimatedSocialRate,
+    estimatedSocialContributionsRate: socialContributionRateFactor,
     estimatedSocialContributions: parseFloat(estimatedSocialContributions.toFixed(2)),
-    netIncomeAfterAllContributions: parseFloat(netIncomeAfterAllContributions.toFixed(2)),
+    netIncomeAfterAllContributions: parseFloat(netIncomeAfterAll.toFixed(2)),
   };
 }
-

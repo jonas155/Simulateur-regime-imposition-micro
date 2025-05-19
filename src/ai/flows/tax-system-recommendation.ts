@@ -55,10 +55,10 @@ Type d\'activité : {{{activityType}}}
 Informations clés pour votre analyse :
 
 Régime Micro-Entreprise :
-- L'impôt sur le revenu est calculé sur le chiffre d\'affaires après un abattement forfaitaire pour frais professionnels. Cet abattement est de :
+- L\'impôt sur le revenu est calculé sur le chiffre d\'affaires après un abattement forfaitaire pour frais professionnels. Cet abattement est de :
     - Ventes de marchandises (VENTE_BIC) : 71%
     - Prestations de services commerciales et artisanales (SERVICE_BIC) : 50%
-    - Autres prestations de services (LIBERAL_BNC_AUTRE) et Professions libérales réglementées CIPAV (LIBERAL_BNC_CIPAV) : 34%
+    - Autres prestations de services (LIBERAL_BNC_AUTRE) et Professions libérales réglementées CIPAV (LIBERAL_BNC_CIPAV) : 34% (minimum 305€)
 - Les cotisations sociales et la CFP sont calculées sur le chiffre d\'affaires brut (avant abattement) aux taux suivants :
     - VENTES_BIC : Cotisations sociales 12,3% + CFP 0,1% = 12,4%
     - SERVICE_BIC : Cotisations sociales 21,2% + CFP 0,1% = 21,3%
@@ -67,10 +67,12 @@ Régime Micro-Entreprise :
 - L\'avantage du Micro est sa simplicité. Il est souvent plus intéressant si le total de vos charges réelles (y compris les cotisations sociales que vous paieriez au réel) est inférieur à l\'abattement forfaitaire du régime micro (attention, l\'abattement micro est pour l\'IR, les cotisations micro sont sur le CA).
 
 Régime Réel Simplifié :
-- L\'impôt sur le revenu est calculé sur le bénéfice réel (Chiffre d\'affaires - Charges annuelles réelles).
+- Le bénéfice avant cotisations sociales est calculé comme (Chiffre d\'affaires - Charges annuelles réelles).
 - Les charges annuelles réelles que vous fournissez sont déductibles.
-- Les cotisations sociales sont également calculées sur ce bénéfice réel. Pour cette simulation, nous estimons ces cotisations à environ 45% du bénéfice.
-- Le Régime Réel est souvent plus intéressant si vos charges réelles (y compris les cotisations sociales estimées à 45% du bénéfice) sont significativement plus élevées que l\'abattement forfaitaire du régime Micro (qui ne couvre que les frais pour l\'IR, pas les cotisations sociales payées sur le CA).
+- Les cotisations sociales sont estimées de la manière suivante : elles représentent 45% du bénéfice *après* déduction de ces mêmes cotisations. Le calcul précis est : (Bénéfice avant cotisations sociales / 1,45) * 0,45.
+- Ces cotisations sociales estimées sont ensuite déduites du bénéfice avant cotisations sociales pour obtenir le bénéfice imposable à l\'impôt sur le revenu.
+- L\'impôt sur le revenu est calculé sur ce bénéfice imposable final (Bénéfice avant cotisations sociales - Cotisations sociales estimées).
+- Le Régime Réel est souvent plus intéressant si vos charges réelles (y compris les cotisations sociales calculées comme ci-dessus) sont significativement plus élevées que l\'abattement forfaitaire du régime Micro (qui ne couvre que les frais pour l\'IR, pas les cotisations sociales payées sur le CA).
 
 Votre recommandation doit clairement indiquer quel régime semble le plus avantageux globalement (en termes de revenu net final après impôt sur le revenu ET toutes cotisations sociales) et pourquoi. Basez-vous sur une comparaison chiffrée du revenu net final pour chaque régime. La réponse doit être uniquement en français.
 `,
@@ -87,4 +89,3 @@ const taxSystemRecommendationFlow = ai.defineFlow(
     return output!;
   }
 );
-

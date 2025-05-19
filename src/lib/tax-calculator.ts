@@ -77,11 +77,13 @@ function getMicroRates(activityType: ActivityType): MicroRates {
  * Calculates tax details for Régime Micro-Entreprise.
  * Takes into account activity type for allowances and URSSAF rates.
  * @param annualRevenue The annual revenue.
+ * @param annualExpenses The actual annual expenses incurred by the business.
  * @param activityType The type of activity.
  * @returns An object containing detailed tax and contribution calculations.
  */
-export function calculateMicroRegimeTax(annualRevenue: number, activityType: ActivityType): MicroRegimeResult {
+export function calculateMicroRegimeTax(annualRevenue: number, annualExpenses: number, activityType: ActivityType): MicroRegimeResult {
   const revenue = Math.max(0, annualRevenue);
+  const expenses = Math.max(0, annualExpenses); // Ensure expenses are not negative
   const rates = getMicroRates(activityType);
 
   const percentageAllowance = revenue * rates.allowanceRate;
@@ -96,7 +98,8 @@ export function calculateMicroRegimeTax(annualRevenue: number, activityType: Act
   const cfpContribution = revenue * rates.cfpRate;
   const totalUrssafContributions = urssafSocialContributions + cfpContribution;
 
-  const netIncomeAfterAll = revenue - taxAmount - totalUrssafContributions;
+  // For realistic net income, deduct actual expenses, tax, and social contributions
+  const netIncomeAfterAll = revenue - expenses - taxAmount - totalUrssafContributions;
 
   return {
     taxableIncome: parseFloat(taxableIncomeForTax.toFixed(2)),

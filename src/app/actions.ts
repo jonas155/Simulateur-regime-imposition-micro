@@ -63,7 +63,7 @@ export async function getTaxSimulation(
   const { annualRevenue, annualExpenses, activityType } = validation.data;
 
   try {
-    const microResult = calculateMicroRegimeTax(annualRevenue, activityType);
+    const microResult = calculateMicroRegimeTax(annualRevenue, annualExpenses, activityType);
     const reelResult = calculateReelRegimeTax(annualRevenue, annualExpenses);
 
     let aiRecommendationText: string | null = null;

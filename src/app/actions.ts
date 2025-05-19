@@ -1,3 +1,4 @@
+
 // src/app/actions.ts
 'use server';
 
@@ -29,21 +30,31 @@ export interface SimulationResult {
   activityType?: ActivityType;
 }
 
+const defaultReelResult: ReelRegimeResult = { 
+  taxableIncome: 0, 
+  taxAmount: 0, 
+  netIncomeAfterTax: 0,
+  estimatedSocialContributionsRate: 0.43,
+  estimatedSocialContributions: 0,
+  netIncomeAfterAllContributions: 0
+};
+
+const defaultMicroResult: MicroRegimeResult = {
+    taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, 
+    allowanceRate: 0.34, urssafSocialContributionsRate: 0.231, cfpRate: 0.002,
+    urssafSocialContributions: 0, cfpContribution: 0, totalUrssafContributions: 0,
+    netIncomeAfterAll: 0
+};
+
+
 export async function getTaxSimulation(
   data: z.infer<typeof SimulationInputSchema>
 ): Promise<SimulationResult> {
   const validation = SimulationInputSchema.safeParse(data);
   if (!validation.success) {
-    // Construct a default MicroRegimeResult with typical rates for LIBERAL_BNC_AUTRE
-    const defaultMicroResult: MicroRegimeResult = {
-        taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, 
-        allowanceRate: 0.34, urssafSocialContributionsRate: 0.231, cfpRate: 0.002,
-        urssafSocialContributions: 0, cfpContribution: 0, totalUrssafContributions: 0,
-        netIncomeAfterAll: 0
-    };
     return {
       micro: defaultMicroResult, 
-      reel: { taxableIncome: 0, taxAmount: 0, netIncomeAfterTax: 0 }, 
+      reel: defaultReelResult, 
       aiRecommendation: null,
       error: validation.error.errors.map(e => e.message).join(', '),
       activityType: data.activityType || "LIBERAL_BNC_AUTRE", 
@@ -74,15 +85,9 @@ export async function getTaxSimulation(
     };
   } catch (e) {
     console.error("Tax calculation error:", e);
-    const defaultMicroResult: MicroRegimeResult = {
-        taxableIncome: 0, taxAmount: 0, allowanceApplied: 0, 
-        allowanceRate: 0.34, urssafSocialContributionsRate: 0.231, cfpRate: 0.002,
-        urssafSocialContributions: 0, cfpContribution: 0, totalUrssafContributions: 0,
-        netIncomeAfterAll: 0
-    };
     return {
       micro: defaultMicroResult,
-      reel: { taxableIncome: 0, taxAmount: 0, netIncomeAfterTax: 0 },
+      reel: defaultReelResult,
       aiRecommendation: null,
       error: "Une erreur est survenue lors du calcul des impôts.",
       activityType,

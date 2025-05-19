@@ -1,3 +1,4 @@
+
 // src/lib/tax-calculator.ts
 
 export type ActivityType = "VENTE_BIC" | "SERVICE_BIC" | "LIBERAL_BNC_AUTRE" | "LIBERAL_BNC_CIPAV";
@@ -62,12 +63,12 @@ function getMicroRates(activityType: ActivityType): MicroRates {
     case "VENTE_BIC": // Ventes de marchandises, denrées à emporter/sur place, fourniture logement
       return { allowanceRate: 0.71, urssafSocialRate: 0.123, cfpRate: 0.001, minAllowance: 305 };
     case "SERVICE_BIC": // Prestations de services commerciales et artisanales (BIC)
-      return { allowanceRate: 0.50, urssafSocialRate: 0.212, cfpRate: 0.001, minAllowance: 305 }; // CFP pour services commerciaux, artisans c'est 0.3%
+      return { allowanceRate: 0.50, urssafSocialRate: 0.212, cfpRate: 0.001, minAllowance: 305 };
     case "LIBERAL_BNC_AUTRE": // Autres prestations de services (BNC), non CIPAV
       return { allowanceRate: 0.34, urssafSocialRate: 0.231, cfpRate: 0.002, minAllowance: 305 };
     case "LIBERAL_BNC_CIPAV": // Professions libérales réglementées relevant de la Cipav
       return { allowanceRate: 0.34, urssafSocialRate: 0.232, cfpRate: 0.002, minAllowance: 305 };
-    default: // Fallback, should ideally not be reached if form validation is correct
+    default: // Fallback
       return { allowanceRate: 0.34, urssafSocialRate: 0.231, cfpRate: 0.002, minAllowance: 305 };
   }
 }
@@ -83,7 +84,6 @@ export function calculateMicroRegimeTax(annualRevenue: number, activityType: Act
   const revenue = Math.max(0, annualRevenue);
   const rates = getMicroRates(activityType);
 
-  // Income tax calculation
   const percentageAllowance = revenue * rates.allowanceRate;
   const effectiveAllowance = Math.min(revenue, Math.max(percentageAllowance, rates.minAllowance));
   let taxableIncomeForTax = revenue - effectiveAllowance;
@@ -92,7 +92,6 @@ export function calculateMicroRegimeTax(annualRevenue: number, activityType: Act
   }
   const taxAmount = calculateIncomeTax(taxableIncomeForTax);
 
-  // URSSAF contributions calculation
   const urssafSocialContributions = revenue * rates.urssafSocialRate;
   const cfpContribution = revenue * rates.cfpRate;
   const totalUrssafContributions = urssafSocialContributions + cfpContribution;
@@ -114,34 +113,46 @@ export function calculateMicroRegimeTax(annualRevenue: number, activityType: Act
 }
 
 export interface ReelRegimeResult {
-  taxableIncome: number;
+  taxableIncome: number; // This is revenue - expenses, also known as bénéfice
   taxAmount: number;
-  netIncomeAfterTax: number;
+  netIncomeAfterTax: number; // This is revenue - expenses - tax (bénéfice - tax)
+  estimatedSocialContributionsRate: number;
+  estimatedSocialContributions: number;
+  netIncomeAfterAllContributions: number; // This is bénéfice - tax - estimated social contributions
 }
 
 /**
  * Calculates tax details for Régime Réel.
  * Taxable income is annual revenue minus annual expenses.
+ * Includes an estimation for social contributions.
  * @param annualRevenue The annual revenue.
  * @param annualExpenses The annual expenses.
- * @returns An object containing taxable income, tax amount, and net income after tax.
+ * @returns An object containing taxable income, tax amount, net income after tax, and estimated social contributions.
  */
 export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: number): ReelRegimeResult {
   const revenue = Math.max(0, annualRevenue);
   const expenses = Math.max(0, annualExpenses);
+  const estimatedSocialRate = 0.43; // Estimated 43% of benefit
 
-  let taxableIncome = revenue - expenses;
-  if (taxableIncome < 0) {
-    taxableIncome = 0;
+  let benefice = revenue - expenses; // This is the base for IR and social contributions
+  if (benefice < 0) {
+    benefice = 0;
   }
-
-  const taxAmount = calculateIncomeTax(taxableIncome);
-  const netIncomeAfterTax = revenue - expenses - taxAmount;
-
+  
+  const taxableIncomeForIR = benefice; // In Régime Réel, IR is on the bénéfice
+  const taxAmount = calculateIncomeTax(taxableIncomeForIR);
+  
+  const estimatedSocialContributions = benefice * estimatedSocialRate;
+  
+  const netIncomeAfterTax = benefice - taxAmount; // Net after IR, before social contributions
+  const netIncomeAfterAllContributions = benefice - taxAmount - estimatedSocialContributions;
 
   return {
-    taxableIncome: parseFloat(taxableIncome.toFixed(2)),
+    taxableIncome: parseFloat(taxableIncomeForIR.toFixed(2)),
     taxAmount,
     netIncomeAfterTax: parseFloat(netIncomeAfterTax.toFixed(2)),
+    estimatedSocialContributionsRate: estimatedSocialRate,
+    estimatedSocialContributions: parseFloat(estimatedSocialContributions.toFixed(2)),
+    netIncomeAfterAllContributions: parseFloat(netIncomeAfterAllContributions.toFixed(2)),
   };
 }

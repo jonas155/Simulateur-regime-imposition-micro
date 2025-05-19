@@ -6,7 +6,7 @@ import React, { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Activity } from 'lucide-react';
+import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Activity, Percent } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -45,8 +45,8 @@ const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_AUTRE"
 });
 
 const formSchema = z.object({
-  annualRevenue: z.coerce.number().min(0, "Le chiffre d'affaires annuel doit être positif ou nul."),
-  annualExpenses: z.coerce.number().min(0, "Les charges annuelles doivent être positives ou nulles."),
+  annualRevenue: z.coerce.number().min(0, "Le chiffre d'affaires annuel doit être positif ou nul.").default('' as unknown as number),
+  annualExpenses: z.coerce.number().min(0, "Les charges annuelles doivent être positives ou nulles.").default('' as unknown as number),
   activityType: ActivityTypeEnum,
 });
 
@@ -77,7 +77,7 @@ export default function FiscalNavigatorForm() {
     setSimulationResult(null);
     startTransition(async () => {
       const result = await getTaxSimulation(values);
-      if (result.error && !result.aiRecommendation && !result.micro && !result.reel) { 
+       if (result.error && (!result.micro || !result.reel || !result.micro.taxableIncome || !result.reel.taxableIncome )) { 
         toast({
           variant: "destructive",
           title: "Erreur de simulation",
@@ -151,7 +151,6 @@ export default function FiscalNavigatorForm() {
                         type="number"
                         placeholder="Ex: 50000"
                         {...field}
-                        onChange={event => field.onChange(event.target.value === '' ? '' : +event.target.value)}
                         className="pl-10 text-base"
                         step="any"
                       />
@@ -174,7 +173,6 @@ export default function FiscalNavigatorForm() {
                         type="number"
                         placeholder="Ex: 10000"
                         {...field}
-                        onChange={event => field.onChange(event.target.value === '' ? '' : +event.target.value)}
                         className="pl-10 text-base"
                         step="any"
                       />
@@ -249,7 +247,7 @@ export default function FiscalNavigatorForm() {
                 <p>CFP ({formatPercentage(simulationResult.micro.cfpRate)}): <span className="font-semibold">{formatCurrency(simulationResult.micro.cfpContribution)}</span></p>
                 <p>Total cotisations URSSAF: <strong className="text-accent-foreground">{formatCurrency(simulationResult.micro.totalUrssafContributions)}</strong></p>
                 <Separator className="my-2" />
-                <p className="text-base font-semibold">Revenu net perçu après impôt et cotisations:</p>
+                <p className="text-base font-semibold">Revenu net perçu (après impôt et cotisations):</p>
                 <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.micro.netIncomeAfterAll)}</p>
               </CardContent>
             </Card>
@@ -266,13 +264,17 @@ export default function FiscalNavigatorForm() {
                  <Separator className="my-1" />
                 <p className="font-medium text-primary-focus">Impôt sur le revenu :</p>
                 <p>Charges déductibles: <span className="font-semibold">{formatCurrency(form.getValues('annualExpenses'))}</span></p>
-                <p>Revenu imposable: <span className="font-semibold">{formatCurrency(simulationResult.reel.taxableIncome)}</span></p>
+                <p>Bénéfice imposable (base IR & cotisations): <span className="font-semibold">{formatCurrency(simulationResult.reel.taxableIncome)}</span></p>
                 <p>Montant de l'impôt: <strong className="text-accent-foreground">{formatCurrency(simulationResult.reel.taxAmount)}</strong></p>
                 <Separator className="my-2" />
-                <p className="text-base font-semibold">Revenu net perçu après impôt (avant cotisations sociales):</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.reel.netIncomeAfterTax)}</p>
+                <p className="font-medium text-primary-focus flex items-center gap-1"><Briefcase size={16}/> Cotisations Sociales (estimation) :</p>
+                <p>Taux estimé sur bénéfice: <span className="font-semibold">{formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)}</span></p>
+                <p>Montant estimé des cotisations: <strong className="text-accent-foreground">{formatCurrency(simulationResult.reel.estimatedSocialContributions)}</strong></p>
+                <Separator className="my-2" />
+                <p className="text-base font-semibold">Revenu net perçu (après impôt et estimation cotisations):</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.reel.netIncomeAfterAllContributions)}</p>
                  <p className="text-xs text-muted-foreground italic mt-2">
-                  Les cotisations sociales au régime réel sont calculées sur le bénéfice réel et peuvent varier considérablement. Elles ne sont pas incluses dans cette simulation simplifiée du revenu net.
+                  Les cotisations sociales au régime réel sont complexes et peuvent varier considérablement (ACRE, type d'activité, caisse de retraite, etc.). Le montant ci-dessus est une estimation grossière (environ {formatPercentage(simulationResult.reel.estimatedSocialContributionsRate)} du bénéfice) et ne remplace pas une simulation personnalisée.
                 </p>
               </CardContent>
             </Card>
@@ -291,7 +293,7 @@ export default function FiscalNavigatorForm() {
             <Info className="h-4 w-4" />
             <AlertTitle>Avertissement</AlertTitle>
             <AlertDescription>
-              Cette simulation est fournie à titre indicatif et ne constitue pas un conseil fiscal ou social. Les calculs d'impôt sur le revenu sont basés sur le barème 2024 pour les revenus 2023 (1 part fiscale). Les cotisations URSSAF sont des estimations basées sur les taux standards pour le type d'activité sélectionné en micro-entreprise. Consultez un professionnel pour une analyse personnalisée.
+              Cette simulation est fournie à titre indicatif et ne constitue pas un conseil fiscal ou social. Les calculs d'impôt sur le revenu sont basés sur le barème 2024 pour les revenus 2023 (1 part fiscale). Les cotisations URSSAF en micro-entreprise sont des estimations basées sur les taux standards. Les cotisations au régime réel sont une estimation grossière. Consultez un professionnel pour une analyse personnalisée.
             </AlertDescription>
           </Alert>
         </CardFooter>

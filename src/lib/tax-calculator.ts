@@ -132,7 +132,7 @@ export interface ReelRegimeResult {
 export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: number): ReelRegimeResult {
   const revenue = Math.max(0, annualRevenue);
   const expenses = Math.max(0, annualExpenses);
-  const estimatedSocialRate = 0.43; // Estimated 43% of benefit
+  const estimatedSocialRate = 0.45; // Estimated 45% of benefit, as per user examples
 
   let benefice = revenue - expenses; // This is the base for IR and social contributions
   if (benefice < 0) {
@@ -156,3 +156,4 @@ export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: nu
     netIncomeAfterAllContributions: parseFloat(netIncomeAfterAllContributions.toFixed(2)),
   };
 }
+

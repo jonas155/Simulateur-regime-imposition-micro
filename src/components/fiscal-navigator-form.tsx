@@ -1,3 +1,4 @@
+
 // src/components/fiscal-navigator-form.tsx
 'use client';
 
@@ -46,13 +47,13 @@ export default function FiscalNavigatorForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      annualRevenue: undefined, 
-      annualExpenses: undefined,
+      annualRevenue: '' as unknown as number, // Initialize as empty string
+      annualExpenses: '' as unknown as number, // Initialize as empty string
     },
   });
 
   const onSubmit = (values: FormData) => {
-    setSimulationResult(null); 
+    setSimulationResult(null);
     startTransition(async () => {
       const result = await getTaxSimulation(values);
       if (result.error && !result.aiRecommendation) { // Only toast if there's a critical error and no partial result
@@ -93,11 +94,11 @@ export default function FiscalNavigatorForm() {
                   <FormControl>
                     <div className="relative">
                       <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        type="number" 
-                        placeholder="Ex: 50000" 
-                        {...field} 
-                        className="pl-10 text-base" 
+                      <Input
+                        type="number"
+                        placeholder="Ex: 50000"
+                        {...field}
+                        className="pl-10 text-base"
                         step="any"
                       />
                     </div>
@@ -115,10 +116,10 @@ export default function FiscalNavigatorForm() {
                   <FormControl>
                     <div className="relative">
                       <Receipt className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        type="number" 
-                        placeholder="Ex: 10000" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="Ex: 10000"
+                        {...field}
                         className="pl-10 text-base"
                         step="any"
                       />
@@ -161,7 +162,7 @@ export default function FiscalNavigatorForm() {
       {simulationResult && !isPending && (
         <CardFooter className="flex flex-col gap-6 pt-6 border-t mt-6">
           <h3 className="text-2xl font-semibold text-center">Résultats de la simulation</h3>
-          
+
           {simulationResult.error && (
              <Alert variant="destructive" className="w-full">
                <AlertTriangle className="h-4 w-4" />

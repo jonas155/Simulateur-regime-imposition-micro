@@ -6,7 +6,7 @@ import React, { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase } from 'lucide-react';
+import { Euro, Receipt, Sparkles, TrendingUp, TrendingDown, FileText, Info, AlertTriangle, Briefcase, Building, Activity } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +18,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -31,13 +38,25 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getTaxSimulation, type SimulationResult } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import type { ActivityType } from '@/lib/tax-calculator';
+
+const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC"], {
+  errorMap: () => ({ message: "Veuillez sélectionner un type d'activité." })
+});
 
 const formSchema = z.object({
   annualRevenue: z.coerce.number().min(0, "Le chiffre d'affaires annuel doit être positif ou nul."),
   annualExpenses: z.coerce.number().min(0, "Les charges annuelles doivent être positives ou nulles."),
+  activityType: ActivityTypeEnum,
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+const activityTypeLabels: Record<ActivityType, string> = {
+  VENTE_BIC: "Ventes de marchandises (BIC)",
+  SERVICE_BIC: "Prestations de services (BIC)",
+  LIBERAL_BNC: "Activités libérales (BNC)",
+};
 
 export default function FiscalNavigatorForm() {
   const [isPending, startTransition] = useTransition();
@@ -47,8 +66,9 @@ export default function FiscalNavigatorForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      annualRevenue: '' as unknown as number, // Initialize as empty string
-      annualExpenses: '' as unknown as number, // Initialize as empty string
+      annualRevenue: '' as unknown as number,
+      annualExpenses: '' as unknown as number,
+      activityType: "LIBERAL_BNC" as ActivityType, // Default activity type
     },
   });
 
@@ -56,7 +76,7 @@ export default function FiscalNavigatorForm() {
     setSimulationResult(null);
     startTransition(async () => {
       const result = await getTaxSimulation(values);
-      if (result.error && !result.aiRecommendation) { // Only toast if there's a critical error and no partial result
+      if (result.error && !result.aiRecommendation && !result.micro && !result.reel) { 
         toast({
           variant: "destructive",
           title: "Erreur de simulation",
@@ -67,24 +87,56 @@ export default function FiscalNavigatorForm() {
     });
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined) return 'N/A';
     return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
   };
+  
+  const formatPercentage = (value: number | undefined) => {
+    if (value === undefined) return 'N/A';
+    return (value * 100).toFixed(1) + '%';
+  }
+
+  const currentActivityType = form.watch("activityType");
 
   return (
-    <Card className="w-full max-w-2xl shadow-2xl">
+    <Card className="w-full max-w-3xl shadow-2xl">
       <CardHeader className="text-center">
         <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
           <FileText size={32} />
         </div>
         <CardTitle className="text-3xl font-bold">Fiscal Navigator</CardTitle>
         <CardDescription className="text-lg">
-          Simulez votre imposition et vos cotisations, puis choisissez le régime le plus adapté.
+          Simulez votre imposition et vos cotisations selon votre type d'activité.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="activityType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base flex items-center gap-2"><Activity size={18}/>Type d'activité</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="text-base">
+                        <SelectValue placeholder="Sélectionnez un type d'activité" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(activityTypeLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value} className="text-base">
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="annualRevenue"
@@ -112,7 +164,7 @@ export default function FiscalNavigatorForm() {
               name="annualExpenses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Charges annuelles déductibles (€)</FormLabel>
+                  <FormLabel className="text-base">Charges annuelles déductibles (€) (pour Régime Réel)</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Receipt className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -138,6 +190,7 @@ export default function FiscalNavigatorForm() {
 
       {isPending && (
         <CardFooter className="flex flex-col gap-4 pt-6">
+          {/* Skeleton remains the same */}
           <Skeleton className="h-8 w-1/2" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
             <div className="space-y-2">
@@ -159,9 +212,9 @@ export default function FiscalNavigatorForm() {
         </CardFooter>
       )}
 
-      {simulationResult && !isPending && (
+      {simulationResult && simulationResult.micro && simulationResult.reel && !isPending && (
         <CardFooter className="flex flex-col gap-6 pt-6 border-t mt-6">
-          <h3 className="text-2xl font-semibold text-center">Résultats de la simulation</h3>
+          <h3 className="text-2xl font-semibold text-center">Résultats de la simulation pour {activityTypeLabels[simulationResult.activityType || currentActivityType]}</h3>
 
           {simulationResult.error && (
              <Alert variant="destructive" className="w-full">
@@ -185,14 +238,17 @@ export default function FiscalNavigatorForm() {
                 <p>Chiffre d'affaires: <span className="font-semibold">{formatCurrency(form.getValues('annualRevenue'))}</span></p>
                 <Separator className="my-1" />
                 <p className="font-medium text-primary-focus">Impôt sur le revenu :</p>
-                <p>Abattement forfaitaire (34%, min. 305€): <span className="font-semibold">{formatCurrency(simulationResult.micro.allowanceApplied)}</span></p>
+                <p>Abattement forfaitaire ({formatPercentage(simulationResult.micro.allowanceRate)}, min. 305€): <span className="font-semibold">{formatCurrency(simulationResult.micro.allowanceApplied)}</span></p>
                 <p>Revenu imposable: <span className="font-semibold">{formatCurrency(simulationResult.micro.taxableIncome)}</span></p>
-                <p className="text-base">Montant de l'impôt: <strong className="text-lg text-accent-foreground">{formatCurrency(simulationResult.micro.taxAmount)}</strong></p>
+                <p>Montant de l'impôt: <strong className="text-accent-foreground">{formatCurrency(simulationResult.micro.taxAmount)}</strong></p>
                 <Separator className="my-2" />
                 <p className="font-medium text-primary-focus flex items-center gap-1"><Briefcase size={16}/> Cotisations URSSAF (estimations) :</p>
-                <p>Cotisations sociales (~21.2%): <span className="font-semibold">{formatCurrency(simulationResult.micro.urssafSocialContributions)}</span></p>
-                <p>CFP (~0.2%): <span className="font-semibold">{formatCurrency(simulationResult.micro.cfpContribution)}</span></p>
-                 <p className="text-base">Total cotisations URSSAF: <strong className="text-lg text-accent-foreground">{formatCurrency(simulationResult.micro.urssafSocialContributions + simulationResult.micro.cfpContribution)}</strong></p>
+                <p>Cotisations sociales ({formatPercentage(simulationResult.micro.urssafSocialContributionsRate)}): <span className="font-semibold">{formatCurrency(simulationResult.micro.urssafSocialContributions)}</span></p>
+                <p>CFP ({formatPercentage(simulationResult.micro.cfpRate)}): <span className="font-semibold">{formatCurrency(simulationResult.micro.cfpContribution)}</span></p>
+                <p>Total cotisations URSSAF: <strong className="text-accent-foreground">{formatCurrency(simulationResult.micro.totalUrssafContributions)}</strong></p>
+                <Separator className="my-2" />
+                <p className="text-base font-semibold">Revenu net perçu après impôt et cotisations:</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.micro.netIncomeAfterAll)}</p>
               </CardContent>
             </Card>
 
@@ -209,10 +265,12 @@ export default function FiscalNavigatorForm() {
                 <p className="font-medium text-primary-focus">Impôt sur le revenu :</p>
                 <p>Charges déductibles: <span className="font-semibold">{formatCurrency(form.getValues('annualExpenses'))}</span></p>
                 <p>Revenu imposable: <span className="font-semibold">{formatCurrency(simulationResult.reel.taxableIncome)}</span></p>
-                <p className="text-base">Montant de l'impôt: <strong className="text-lg text-accent-foreground">{formatCurrency(simulationResult.reel.taxAmount)}</strong></p>
+                <p>Montant de l'impôt: <strong className="text-accent-foreground">{formatCurrency(simulationResult.reel.taxAmount)}</strong></p>
                 <Separator className="my-2" />
+                <p className="text-base font-semibold">Revenu net perçu après impôt (avant cotisations sociales):</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(simulationResult.reel.netIncomeAfterTax)}</p>
                  <p className="text-xs text-muted-foreground italic mt-2">
-                  Les cotisations sociales au régime réel sont calculées sur le bénéfice réel et peuvent varier. Elles ne sont pas incluses dans cette simulation simplifiée.
+                  Les cotisations sociales au régime réel sont calculées sur le bénéfice réel et peuvent varier considérablement. Elles ne sont pas incluses dans cette simulation simplifiée du revenu net.
                 </p>
               </CardContent>
             </Card>
@@ -231,7 +289,7 @@ export default function FiscalNavigatorForm() {
             <Info className="h-4 w-4" />
             <AlertTitle>Avertissement</AlertTitle>
             <AlertDescription>
-              Cette simulation est fournie à titre indicatif et ne constitue pas un conseil fiscal ou social. Les calculs d'impôt sur le revenu sont basés sur le barème 2024 pour les revenus 2023 (1 part fiscale) et un abattement Micro-BNC. Les cotisations URSSAF sont des estimations basées sur les taux standards pour activités libérales (BNC) en micro-entreprise. Consultez un professionnel pour une analyse personnalisée.
+              Cette simulation est fournie à titre indicatif et ne constitue pas un conseil fiscal ou social. Les calculs d'impôt sur le revenu sont basés sur le barème 2024 pour les revenus 2023 (1 part fiscale). Les cotisations URSSAF sont des estimations basées sur les taux standards pour le type d'activité sélectionné en micro-entreprise. Consultez un professionnel pour une analyse personnalisée.
             </AlertDescription>
           </Alert>
         </CardFooter>

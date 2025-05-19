@@ -1,5 +1,7 @@
 // src/lib/tax-calculator.ts
 
+export type ActivityType = "VENTE_BIC" | "SERVICE_BIC" | "LIBERAL_BNC";
+
 /**
  * Calculates French income tax based on progressive tax brackets for 1 part (single person).
  * Uses rates for 2023 income, taxed in 2024.
@@ -39,49 +41,79 @@ export interface MicroRegimeResult {
   taxableIncome: number;
   taxAmount: number;
   allowanceApplied: number;
+  allowanceRate: number;
+  urssafSocialContributionsRate: number;
+  cfpRate: number;
   urssafSocialContributions: number;
   cfpContribution: number;
+  totalUrssafContributions: number;
+  netIncomeAfterAll: number;
 }
 
-const URSSAF_SOCIAL_RATE_BNC = 0.212; // Taux approximatif pour 2024
-const CFP_RATE_BNC = 0.002; // Taux pour activités libérales 2024
+interface MicroRates {
+  allowanceRate: number;
+  urssafSocialRate: number;
+  cfpRate: number;
+  minAllowance: number;
+}
+
+function getMicroRates(activityType: ActivityType): MicroRates {
+  switch (activityType) {
+    case "VENTE_BIC":
+      return { allowanceRate: 0.71, urssafSocialRate: 0.123, cfpRate: 0.001, minAllowance: 305 }; // CFP commerçant 0.1%
+    case "SERVICE_BIC":
+      return { allowanceRate: 0.50, urssafSocialRate: 0.212, cfpRate: 0.001, minAllowance: 305 }; // CFP prestations de services commerciales 0.1% (assimilé commerçant)
+    case "LIBERAL_BNC":
+    default:
+      return { allowanceRate: 0.34, urssafSocialRate: 0.212, cfpRate: 0.002, minAllowance: 305 }; // CFP professions libérales 0.2%
+  }
+}
 
 /**
- * Calculates tax details for Régime Micro-Entreprise (specifically Micro-BNC).
- * Assumes BNC with a 34% flat-rate allowance, minimum €305 for income tax.
- * Calculates URSSAF social contributions and CFP based on gross revenue.
+ * Calculates tax details for Régime Micro-Entreprise.
+ * Takes into account activity type for allowances and URSSAF rates.
  * @param annualRevenue The annual revenue.
- * @returns An object containing taxable income, tax amount, allowance applied, URSSAF social contributions, and CFP.
+ * @param activityType The type of activity (BIC Vente, BIC Service, BNC).
+ * @returns An object containing detailed tax and contribution calculations.
  */
-export function calculateMicroRegimeTax(annualRevenue: number): MicroRegimeResult {
-  const revenue = Math.max(0, annualRevenue); // Ensure revenue is not negative
+export function calculateMicroRegimeTax(annualRevenue: number, activityType: ActivityType): MicroRegimeResult {
+  const revenue = Math.max(0, annualRevenue);
+  const rates = getMicroRates(activityType);
 
   // Income tax calculation
-  const percentageAllowance = revenue * 0.34;
-  const minAllowance = 305;
-  const effectiveAllowance = Math.min(revenue, Math.max(percentageAllowance, minAllowance));
+  const percentageAllowance = revenue * rates.allowanceRate;
+  const effectiveAllowance = Math.min(revenue, Math.max(percentageAllowance, rates.minAllowance));
   let taxableIncomeForTax = revenue - effectiveAllowance;
   if (taxableIncomeForTax < 0) {
     taxableIncomeForTax = 0;
   }
   const taxAmount = calculateIncomeTax(taxableIncomeForTax);
 
-  // URSSAF contributions calculation (based on gross revenue for Micro-BNC)
-  const urssafSocialContributions = revenue * URSSAF_SOCIAL_RATE_BNC;
-  const cfpContribution = revenue * CFP_RATE_BNC;
+  // URSSAF contributions calculation
+  const urssafSocialContributions = revenue * rates.urssafSocialRate;
+  const cfpContribution = revenue * rates.cfpRate;
+  const totalUrssafContributions = urssafSocialContributions + cfpContribution;
+
+  const netIncomeAfterAll = revenue - taxAmount - totalUrssafContributions;
 
   return {
     taxableIncome: parseFloat(taxableIncomeForTax.toFixed(2)),
     taxAmount,
     allowanceApplied: parseFloat(effectiveAllowance.toFixed(2)),
+    allowanceRate: rates.allowanceRate,
+    urssafSocialContributionsRate: rates.urssafSocialRate,
+    cfpRate: rates.cfpRate,
     urssafSocialContributions: parseFloat(urssafSocialContributions.toFixed(2)),
     cfpContribution: parseFloat(cfpContribution.toFixed(2)),
+    totalUrssafContributions: parseFloat(totalUrssafContributions.toFixed(2)),
+    netIncomeAfterAll: parseFloat(netIncomeAfterAll.toFixed(2)),
   };
 }
 
 export interface ReelRegimeResult {
   taxableIncome: number;
   taxAmount: number;
+  netIncomeAfterTax: number;
 }
 
 /**
@@ -89,7 +121,7 @@ export interface ReelRegimeResult {
  * Taxable income is annual revenue minus annual expenses.
  * @param annualRevenue The annual revenue.
  * @param annualExpenses The annual expenses.
- * @returns An object containing taxable income and tax amount.
+ * @returns An object containing taxable income, tax amount, and net income after tax.
  */
 export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: number): ReelRegimeResult {
   const revenue = Math.max(0, annualRevenue);
@@ -101,9 +133,12 @@ export function calculateReelRegimeTax(annualRevenue: number, annualExpenses: nu
   }
 
   const taxAmount = calculateIncomeTax(taxableIncome);
+  const netIncomeAfterTax = revenue - expenses - taxAmount;
+
 
   return {
     taxableIncome: parseFloat(taxableIncome.toFixed(2)),
     taxAmount,
+    netIncomeAfterTax: parseFloat(netIncomeAfterTax.toFixed(2)),
   };
 }

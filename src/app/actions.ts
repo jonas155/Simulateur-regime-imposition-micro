@@ -11,6 +11,8 @@ import {
   type ReelRegimeResult,
   type ActivityType
 } from '@/lib/tax-calculator';
+import { submitFeedback as submitFeedbackFlow, type FeedbackInput, type FeedbackOutput } from '@/ai/flows/submit-feedback-flow';
+
 
 const ActivityTypeEnum = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_AUTRE", "LIBERAL_BNC_CIPAV"], {
   errorMap: () => ({ message: "Veuillez sélectionner un type d'activité valide." })
@@ -91,5 +93,34 @@ export async function getTaxSimulation(
       error: "Une erreur est survenue lors du calcul des impôts.",
       activityType,
     };
+  }
+}
+
+// New server action for feedback submission
+const FeedbackSubmissionInputSchema = z.object({
+  feedbackText: z.string().min(1, "Feedback cannot be empty."),
+});
+
+export async function handleFeedbackSubmission(
+  data: z.infer<typeof FeedbackSubmissionInputSchema>
+): Promise<FeedbackOutput> {
+  const validation = FeedbackSubmissionInputSchema.safeParse(data);
+  if (!validation.success) {
+    return { 
+      success: false, 
+      message: validation.error.errors.map(e => e.message).join(', ') 
+    };
+  }
+
+  try {
+    const result = await submitFeedbackFlow({ feedbackText: validation.data.feedbackText });
+    return result;
+  } catch (error) {
+    console.error("Feedback submission error in server action:", error);
+    let errorMessage = "Erreur interne du serveur lors de la soumission du retour.";
+    if (error instanceof Error) {
+        errorMessage = error.message; // Or more specific error handling
+    }
+    return { success: false, message: errorMessage };
   }
 }

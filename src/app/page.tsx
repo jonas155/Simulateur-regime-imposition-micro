@@ -35,7 +35,7 @@ export default function HomePage() { // Explicitly accept params and searchParam
           <div className="text-sm text-muted-foreground md:text-right">
             Soutenir ce projet :{' '}
             <a
-              href="https://buy.stripe.com/test_fZuaEXcl2fG3dw30kc1wY00" // TODO: Replace with actual Stripe link
+              href="https://buy.stripe.com/cNi9ATdpsbNt9COdi19fW00" // TODO: Replace with actual Stripe link
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-primary hover:underline inline-flex items-center gap-1"

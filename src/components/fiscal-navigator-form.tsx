@@ -106,9 +106,9 @@ export default function FiscalNavigatorForm() {
         <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
           <FileText size={32} />
         </div>
-        <CardTitle className="text-3xl font-bold">Simulateur Régime Micro / Réel</CardTitle>
+        <CardTitle className="text-3xl font-bold">Simulateur gratuit Régime Micro / Réel</CardTitle>
         <CardDescription className="text-lg">
-          Simulez votre imposition et vos cotisations selon votre type d'activité.
+          Simulez votre imposition,vos cotisations et revenu selon votre type d'activité.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -285,7 +285,7 @@ export default function FiscalNavigatorForm() {
           {simulationResult.aiRecommendation && (
             <Alert className="w-full mt-4 border-accent bg-accent/10">
               <Sparkles className="h-5 w-5 text-accent" />
-              <AlertTitle className="text-accent text-lg">Recommandation IA</AlertTitle>
+              <AlertTitle className="text-accent text-lg">Recommandations</AlertTitle>
               <AlertDescription className="text-sm">
                 {simulationResult.aiRecommendation}
               </AlertDescription>

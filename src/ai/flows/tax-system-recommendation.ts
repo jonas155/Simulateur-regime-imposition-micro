@@ -19,10 +19,10 @@ const ActivityTypeEnumSchema = z.enum(["VENTE_BIC", "SERVICE_BIC", "LIBERAL_BNC_
 const TaxRecommendationInputSchema = z.object({
   annualRevenue: z
     .number()
-    .describe("Le chiffre d\'affaires annuel de l\'entreprise."),
+    .describe('Le chiffre d\'affaires annuel de l\'entreprise.'),
   annualExpenses: z
     .number()
-    .describe("Les charges annuelles réelles de l\'entreprise (pour le Régime Réel et pour la comparaison du net perçu en Micro)."),
+    .describe('Les charges annuelles réelles de l\'entreprise (pour le Régime Réel et pour la comparaison du net perçu en Micro).'),
   activityType: ActivityTypeEnumSchema.describe(
     "Le type d\'activité : 'VENTE_BIC' (Ventes de marchandises), 'SERVICE_BIC' (Prestations de services BIC), 'LIBERAL_BNC_AUTRE' (Autres prestations de services BNC), ou 'LIBERAL_BNC_CIPAV' (Professions libérales réglementées CIPAV)."
   ),
@@ -69,7 +69,7 @@ Régime Micro-Entreprise :
 
 Régime Réel Simplifié :
 - Le bénéfice avant cotisations sociales est calculé comme (Chiffre d\'affaires - Charges annuelles réelles). Les charges annuelles réelles ({{{annualExpenses}}}) sont donc déductibles.
-- Les cotisations sociales sont estimées de la manière suivante : elles représentent 45% du bénéfice *après* déduction de ces mêmes cotisations. Le calcul précis est : (Bénéfice avant cotisations sociales / 1,45) * 0,45.
+- Les cotisations sociales sont estimées de la manière suivante : elles représentent 45% du bénéfice *après* déduction de ces mêmes cotisations. Le calcul précis est : (Bénéfice avant cotisations sociales / 1.45) * 0.45.
 - Ces cotisations sociales estimées sont ensuite déduites du bénéfice avant cotisations sociales pour obtenir le bénéfice imposable à l\'impôt sur le revenu.
 - L\'impôt sur le revenu est calculé sur ce bénéfice imposable final (Bénéfice avant cotisations sociales - Cotisations sociales estimées).
 - Le Régime Réel est souvent plus intéressant si vos charges réelles (y compris les cotisations sociales calculées comme ci-dessus) sont significativement plus élevées que l\'abattement forfaitaire du régime Micro.
@@ -84,8 +84,20 @@ const taxSystemRecommendationFlow = ai.defineFlow(
     inputSchema: TaxRecommendationInputSchema,
     outputSchema: TaxRecommendationOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input): Promise<TaxRecommendationOutput> => {
+    const result = await prompt(input);
+    // Check if output exists and if the 'recommendation' field, which is required by the schema, is present and a string.
+    if (!result.output || typeof result.output.recommendation !== 'string') {
+      console.error(
+        'AI prompt for taxSystemRecommendationFlow did not return a valid output. Input was:',
+        JSON.stringify(input, null, 2),
+        'Full result from prompt call:',
+        JSON.stringify(result, null, 2)
+      );
+      // This error will be caught by the try...catch in src/app/actions.ts
+      throw new Error('La recommandation IA n\'a pas pu être générée correctement par le flux.');
+    }
+    return result.output;
   }
 );
+

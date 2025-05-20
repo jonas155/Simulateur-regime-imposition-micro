@@ -13,8 +13,8 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: 'Fiscal Navigator - Simulateur de Régime d\'Imposition',
-  description: 'Calculez vos impôts et obtenez une recommandation pour choisir entre Régime Réel et Régime Micro.',
+  title: 'Simulateur gratuit de Régime d\'Imposition Micro / Réel',
+  description: 'Calculez gratuitement vos impôts, revenus et obtenez une recommandation pour choisir entre Régime Réel et Régime Micro.',
 };
 
 export default function RootLayout({

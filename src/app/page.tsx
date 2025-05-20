@@ -8,8 +8,19 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 
-export default function HomePage() {
+// Define the expected props for a page component in Next.js App Router
+interface PageProps {
+  params?: { [key: string]: string | string[] | undefined };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function HomePage({ params, searchParams }: PageProps) { // Explicitly accept params and searchParams
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = React.useState(false);
+
+  // You can log params and searchParams here if needed for debugging,
+  // but they are not used in the component's logic.
+  // console.log('HomePage params:', params);
+  // console.log('HomePage searchParams:', searchParams);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">

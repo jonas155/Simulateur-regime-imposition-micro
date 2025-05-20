@@ -2,14 +2,11 @@
 "use client"; // This directive marks the component as a Client Component
 
 import FiscalNavigatorForm from '@/components/fiscal-navigator-form';
-import FeedbackDialog from '@/components/feedback-dialog';
-import { Linkedin, Heart, MessageSquarePlus } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Heart } from 'lucide-react';
 import React from 'react';
 
 
-export default function HomePage({ params, searchParams }) { // Explicitly accept params and searchParams
+export default function HomePage() { // Explicitly accept params and searchParams
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = React.useState(false);
 
   // You can log params and searchParams here if needed for debugging,

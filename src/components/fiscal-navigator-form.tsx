@@ -183,7 +183,7 @@ export default function FiscalNavigatorForm() {
               )}
             />
             <Button type="submit" className="w-full text-lg py-6" disabled={isPending}>
-              {isPending ? 'Calcul en cours...' : 'Simuler mon imposition & cotisations'}
+              {isPending ? 'Calcul en cours...' : 'Simuler'}
             </Button>
           </form>
         </Form>

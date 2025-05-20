@@ -40,20 +40,10 @@ export default function HomePage({ params, searchParams }: PageProps) { // Expli
               jonasmillet.dev
             </a>
           </div>
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => setIsFeedbackDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <MessageSquarePlus size={18} />
-              Proposer une évolution / Remarque
-            </Button>
-          </div>
           <div className="text-sm text-muted-foreground md:text-right">
             Soutenir ce projet :{' '}
             <a
-              href="https://donate.stripe.com/placeholder_your_link_here" // TODO: Replace with actual Stripe link
+              href="https://buy.stripe.com/test_fZuaEXcl2fG3dw30kc1wY00" // TODO: Replace with actual Stripe link
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-primary hover:underline inline-flex items-center gap-1"
@@ -62,10 +52,6 @@ export default function HomePage({ params, searchParams }: PageProps) { // Expli
             </a>
           </div>
         </div>
-        <FeedbackDialog
-          open={isFeedbackDialogOpen}
-          onOpenChange={setIsFeedbackDialogOpen}
-        />
       </footer>
     </div>
   );

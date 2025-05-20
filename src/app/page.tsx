@@ -20,7 +20,7 @@ export default function HomePage() { // Explicitly accept params and searchParam
         <FiscalNavigatorForm />
       </main>
       <footer className="p-6 text-center border-t bg-card text-card-foreground">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
           <div className="text-sm text-muted-foreground md:text-left">
             Un outil proposé par{' '}
             <a
